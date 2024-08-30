@@ -21,6 +21,7 @@ import { reactive } from 'vue'
 import ServiceCard from './ServiceCard.vue'
 import Bfooter from '../components/Bfooter.vue'
 
+//service
 const services = reactive([
   { id: 1, name: 'Health Support', ratings: [], averageRating: 0 },
   { id: 2, name: 'Mental Health', ratings: [], averageRating: 0 },

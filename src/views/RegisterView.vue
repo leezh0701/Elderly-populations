@@ -6,13 +6,14 @@ const router = useRouter()
 const username = ref('')
 const password = ref('')
 const role = ref('user')
+const usernameError = ref('')
 const passwordError = ref('')
 
 const register = () => {
   const users = JSON.parse(localStorage.getItem('users') || '[]')
 
-  if (users.some((user) => user.username === username.value)) {
-    alert('Username already exists!')
+  // check username avaliable
+  if (usernameError.value) {
     return
   }
 
@@ -24,6 +25,17 @@ const register = () => {
   }
 }
 
+// check username
+const validateUsername = () => {
+  const users = JSON.parse(localStorage.getItem('users') || '[]')
+  if (users.some((user) => user.username === username.value)) {
+    usernameError.value = 'Username already exists!'
+  } else {
+    usernameError.value = ''
+  }
+}
+
+// check password
 const validatePassword = () => {
   const specialCharPattern = /[!@#$%^&*(),.?":{}|<>]/
   if (password.value.length < 8) {
@@ -39,7 +51,8 @@ const validatePassword = () => {
 <template>
   <div class="register-container">
     <h2>Register</h2>
-    <input v-model="username" placeholder="Username" />
+    <input v-model="username" placeholder="Username" @input="validateUsername" />
+    <div v-if="usernameError" class="error">{{ usernameError }}</div>
     <input type="password" v-model="password" placeholder="Password" @input="validatePassword" />
     <div v-if="passwordError" class="error">{{ passwordError }}</div>
     <select v-model="role">

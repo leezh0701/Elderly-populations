@@ -1,3 +1,51 @@
+<template>
+  <div class="container mt-5">
+    <h1 class="text-center">Elderly Population</h1>
+    <p class="text-center">
+      This is a website of a non-profit organization that focuses on the needs of the elderly.
+    </p>
+    <form @submit.prevent="submitForm">
+      <div class="row justify-content-center">
+        <div class="col-md-8 col-sm-10">
+          <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input
+              type="text"
+              class="form-control"
+              id="username"
+              @blur="() => validateName(true)"
+              @input="() => validateName(false)"
+              v-model="formData.username"
+            />
+            <div v-if="errors.username" class="text-danger">{{ errors.username }}</div>
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input
+              type="password"
+              class="form-control"
+              id="password"
+              v-model="formData.password"
+              @blur="() => validatePassword(true)"
+            />
+            <div v-if="errors.password" class="text-danger">{{ errors.password }}</div>
+          </div>
+          <div class="text-center">
+            <button type="submit" class="btn btn-primary me-2">Login</button>
+            <button type="button" class="btn btn-secondary" @click="clearForm">Clear</button>
+          </div>
+          <div v-if="errors.general" class="text-danger text-center mt-3">
+            {{ errors.general }}
+          </div>
+        </div>
+      </div>
+    </form>
+    <p class="text-center mt-3">
+      Don't have an account? <router-link to="/register">Register here</router-link>
+    </p>
+  </div>
+</template>
+
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -62,54 +110,6 @@ const validatePassword = (blur) => {
   }
 }
 </script>
-
-<template>
-  <div class="container mt-5">
-    <h1 class="text-center">Elderly Population</h1>
-    <p class="text-center">
-      This is a website of a non-profit organization that focuses on the needs of the elderly.
-    </p>
-    <form @submit.prevent="submitForm">
-      <div class="row mb-3">
-        <div class="col-md-6 col-sm-6">
-          <label for="username" class="form-label">Username</label>
-          <input
-            type="text"
-            class="form-control"
-            id="username"
-            @blur="() => validateName(true)"
-            @input="() => validateName(false)"
-            v-model="formData.username"
-          />
-          <div v-if="errors.username" class="text-danger">{{ errors.username }}</div>
-        </div>
-      </div>
-      <div class="row mb-3">
-        <div class="col-md-6 col-sm-6">
-          <label for="password" class="form-label">Password</label>
-          <input
-            type="password"
-            class="form-control"
-            id="password"
-            v-model="formData.password"
-            @blur="() => validatePassword(true)"
-          />
-          <div v-if="errors.password" class="text-danger">{{ errors.password }}</div>
-        </div>
-      </div>
-      <div class="text-center">
-        <button type="submit" class="btn btn-primary me-2">Login</button>
-        <button type="button" class="btn btn-secondary" @click="clearForm">Clear</button>
-      </div>
-      <div v-if="errors.general" class="text-danger text-center mt-3">
-        {{ errors.general }}
-      </div>
-    </form>
-    <p class="text-center mt-3">
-      Don't have an account? <router-link to="/register">Register here</router-link>
-    </p>
-  </div>
-</template>
 
 <style scoped>
 .container {
