@@ -8,6 +8,8 @@ import BlogView from '../views/BlogView.vue'
 import ContactUsView from '../views/ContactUsView.vue'
 import AccessDeniedView from '../views/AccessDeniedView.vue'
 import AdminPage from '../views/AdminPage.vue'
+import { auth } from '../firebase' // 从 firebase.js 导入 Firebase 认证
+
 const routes = [
   {
     path: '/login',
@@ -71,18 +73,28 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
-  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}')
+router.beforeEach(async (to, from, next) => {
+  const currentUser = auth.currentUser
 
-  if (to.path === '/login' && isAuthenticated) {
-    next('/homepage')
-  } else if (to.meta.requiresAuth && !isAuthenticated) {
-    next('/access-denied')
-  } else if (to.meta.roles && !to.meta.roles.includes(currentUser.role)) {
-    next('/access-denied')
+  if (currentUser) {
+    const token = await currentUser.getIdTokenResult()
+    const userRole = token.claims.role || 'user'
+
+    if (to.meta.requiresAuth) {
+      if (to.meta.roles && !to.meta.roles.includes(userRole)) {
+        next('/access-denied')
+      } else {
+        next()
+      }
+    } else {
+      next()
+    }
   } else {
-    next()
+    if (to.meta.requiresAuth) {
+      next('/access-denied')
+    } else {
+      next()
+    }
   }
 })
 
