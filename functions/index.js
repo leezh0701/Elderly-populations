@@ -1,88 +1,98 @@
-const functions = require("firebase-functions");
-const cors = require("cors")({origin: true});
-const sgMail = require("@sendgrid/mail");
-const admin = require("firebase-admin");
-admin.initializeApp();
-const db = admin.firestore();
+import { Router } from 'itty-router';
 
-sgMail.setApiKey(functions.config().sendgrid.key);
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
 
-exports.sendEmail = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    if (req.method !== "POST") {
-      return res.status(405).send("Method Not Allowed");
-    }
+const SENDGRID_API_KEY = 'your_sendgrid_api_key_here';
 
-    const {to, subject, text} = req.body;
+const router = Router();
 
-    const msg = {
-      to: to,
-      from: "leezh0701@gmail.com",
-      subject: subject,
-      text: text,
-    };
+router.options('*', () => new Response(null, { headers: CORS_HEADERS }));
 
-    try {
-      await sgMail.send(msg);
-      res.status(200).json({message: "Email sent successfully"});
-    } catch (error) {
-      console.error("Error sending email:", error);
-      res.status(500).json({error: "Failed to send email"});
-    }
-  });
-});
-
-exports.storeSearch = functions.https.onRequest(async (req, res) => {
-  const {userId, location} = req.body;
-
+router.post('/sendEmail', async (request) => {
   try {
-    await db.collection("searches").add({
-      userId,
-      location,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-    });
-    res.status(200).send("Search stored successfully");
-  } catch (error) {
-    res.status(500).send("Error storing search: " + error);
-  }
-});
+    const { to, subject, text } = await request.json();
 
-exports.sendBulkEmail = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    if (req.method !== "POST") {
-      return res.status(405).send("Method Not Allowed");
+    if (!to || !subject || !text) {
+      return new Response('Missing required fields', { status: 400, headers: CORS_HEADERS });
     }
-
-    const {emails, subject, text} = req.body;
-
-    if (!emails || emails.length === 0) {
-      return res.status(400).json({message: "No email addresses provided."});
-    }
-    if (!subject || !text) {
-      return res.status(400).json({message: "Subject and text are required."});
-    }
-
-    console.log("Sending to the following emails:", emails);
 
     const msg = {
-      personalizations: emails.map((email) => ({
-        to: [{email: email}],
-      })),
-      from: "leezh0701@gmail.com",
-      subject: subject,
-      text: text,
+      personalizations: [{ to: [{ email: to }] }],
+      from: 'leezh0701@gmail.com',
+      subject,
+      text,
       html: `<strong>${text}</strong>`,
     };
 
-    try {
-      await sgMail.send(msg);
-      res.status(200).json({message: "Bulk emails sent successfully"});
-    } catch (error) {
-      console.error("Error sending emails:", error.response.body.errors);
-      res.status(500).json({
-        message: "Failed to send emails",
-        error: error.response.body.errors,
-      });
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+      },
+      body: JSON.stringify(msg),
+    });
+
+    if (response.ok) {
+      return new Response(JSON.stringify({ message: 'Email sent successfully' }), { status: 200, headers: CORS_HEADERS });
+    } else {
+      const error = await response.text();
+      return new Response(`Failed to send email: ${error}`, { status: 500, headers: CORS_HEADERS });
     }
-  });
+  } catch (error) {
+    return new Response(`Server error: ${error.message}`, { status: 500, headers: CORS_HEADERS });
+  }
 });
+
+router.post('/sendBulkEmail', async (request) => {
+  try {
+    const { emails, subject, text } = await request.json();
+
+    if (!emails || emails.length === 0) {
+      return new Response('No email addresses provided.', { status: 400, headers: CORS_HEADERS });
+    }
+    if (!subject || !text) {
+      return new Response('Subject and text are required.', { status: 400, headers: CORS_HEADERS });
+    }
+
+    const msg = {
+      personalizations: emails.map((email) => ({
+        to: [{ email: email }],
+      })),
+      from: 'leezh0701@gmail.com',
+      subject,
+      text,
+      html: `<strong>${text}</strong>`,
+    };
+
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SENDGRID_API_KEY}`,
+      },
+      body: JSON.stringify(msg),
+    });
+
+    if (response.ok) {
+      return new Response(JSON.stringify({ message: 'Bulk emails sent successfully' }), { status: 200, headers: CORS_HEADERS });
+    } else {
+      const error = await response.text();
+      return new Response(`Failed to send emails: ${error}`, { status: 500, headers: CORS_HEADERS });
+    }
+  } catch (error) {
+    return new Response(`Server error: ${error.message}`, { status: 500, headers: CORS_HEADERS });
+  }
+});
+
+router.all('*', () => new Response('Not Found', { status: 404, headers: CORS_HEADERS }));
+
+export default {
+  async fetch(request) {
+    return router.handle(request);
+  },
+};
