@@ -1,4 +1,3 @@
-<!-- eslint-disable vue/valid-v-slot -->
 <template>
   <div class="admin-page">
     <v-container class="admin-container">
@@ -94,6 +93,7 @@ const adminUsers = ref(0);
 const regularUsers = ref(0);
 const totalAppointments = ref(0);
 
+// 监听用户登录状态
 onMounted(() => {
   const user = getAuth().currentUser;
   if (user) {
@@ -106,7 +106,6 @@ onMounted(() => {
     const bookingsQuery = collection(db, 'bookings');
     onSnapshot(bookingsQuery, (snapshot) => {
       totalAppointments.value = snapshot.size; 
-      console.log('Total Appointments:', totalAppointments.value); // 调试日志
     });
 
     onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -148,6 +147,7 @@ const selectUser = (user) => {
   }
 };
 
+// 发送批量邮件
 const sendBulkEmail = async () => {
   if (currentUser.value.role !== 'admin') {
     alert("You don't have permission to send emails.");
@@ -159,11 +159,29 @@ const sendBulkEmail = async () => {
     return;
   }
 
-  const emails = selectedUsers.value.map(user => user.username).filter(username => username);
+  // 获取用户的 email 地址
+  const emails = selectedUsers.value
+    .map(user => user.username)  // 使用 username 作为邮件地址
+    .filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));  // 验证邮箱格式
+
+  if (emails.length === 0) {
+    alert("请选择至少一个有效的电子邮件地址");
+    return;
+  }
+
+  // 发送邮件的内容
+  const subject = "Bulk Email Subject";
+  const text = "This is the body of the bulk email.";
 
   try {
     await axios.post('https://us-central1-fit5032-a3-1764f.cloudfunctions.net/sendBulkEmail', {
-      emails
+      emails,  // 使用 emails 字段
+      subject,  // 邮件主题
+      text  // 邮件内容
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+      }
     });
     alert('Bulk emails sent successfully!');
   } catch (error) {

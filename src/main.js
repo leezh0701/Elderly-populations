@@ -12,7 +12,7 @@ import { VTextField, VDataTable, VContainer } from 'vuetify/components';
 
 // Import Firebase SDKs
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import store from './store'; 
 
