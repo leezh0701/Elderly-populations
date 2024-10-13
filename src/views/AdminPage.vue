@@ -42,6 +42,21 @@
         <v-card-title>
           <h2>Manage Users</h2>
         </v-card-title>
+
+        <!-- New: Inputs for subject and text -->
+        <v-card-text>
+          <v-text-field
+            v-model="emailSubject"
+            label="Email Subject"
+            placeholder="Enter the email subject"
+          />
+          <v-textarea
+            v-model="emailText"
+            label="Email Text"
+            placeholder="Enter the email content"
+          />
+        </v-card-text>
+
         <v-card-actions>
           <v-btn @click="exportToCSV" color="primary" class="styled-button" outlined>Export Users to CSV</v-btn>
           <v-btn @click="exportToPDF" color="secondary" class="styled-button" outlined>Export Users to PDF</v-btn>
@@ -92,6 +107,10 @@ const totalUsers = ref(0);
 const adminUsers = ref(0);
 const regularUsers = ref(0);
 const totalAppointments = ref(0);
+
+// Define email subject and text
+const emailSubject = ref("");
+const emailText = ref("");
 
 // 监听用户登录状态
 onMounted(() => {
@@ -159,7 +178,11 @@ const sendBulkEmail = async () => {
     return;
   }
 
-  // 获取用户的 email 地址
+  if (!emailSubject.value || !emailText.value) {
+    alert("Please enter both a subject and an email text.");
+    return;
+  }
+
   const emails = selectedUsers.value
     .map(user => user.username)  // 使用 username 作为邮件地址
     .filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));  // 验证邮箱格式
@@ -169,15 +192,11 @@ const sendBulkEmail = async () => {
     return;
   }
 
-  // 发送邮件的内容
-  const subject = "Bulk Email Subject";
-  const text = "This is the body of the bulk email.";
-
   try {
     await axios.post('https://us-central1-fit5032-a3-1764f.cloudfunctions.net/sendBulkEmail', {
       emails,  // 使用 emails 字段
-      subject,  // 邮件主题
-      text  // 邮件内容
+      subject: emailSubject.value,  // 使用用户输入的 subject
+      text: emailText.value  // 使用用户输入的 text
     }, {
       headers: {
         'Content-Type': 'application/json',
